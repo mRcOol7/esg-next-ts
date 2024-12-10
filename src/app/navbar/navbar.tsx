@@ -13,21 +13,6 @@ const navItems = [
     title: "Home",
     href: "/home",
     description: "Dashboard overview"
-  },
-  {
-    title: "Projects",
-    href: "/projects",
-    description: "Manage ESG projects"
-  },
-  {
-    title: "Analytics",
-    href: "/analytics",
-    description: "Sustainability insights"
-  },
-  {
-    title: "Reporting",
-    href: "/reporting",
-    description: "Generate ESG reports"
   }
 ]
 
@@ -44,7 +29,7 @@ const Navbar = () => {
       <header className="fixed top-0 left-0 right-0 z-50 bg-white shadow-md">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <Link href="/" className="text-2xl font-bold text-green-700 flex items-center">
-            ESG Insights
+            ESG
           </Link>
 
           <div className="md:hidden">
@@ -132,7 +117,6 @@ const Navbar = () => {
           )}
         </div>
       </header>
-      {/* Spacer div to prevent content overlap */}
       <div className="h-[65px]" />
     </>
   )

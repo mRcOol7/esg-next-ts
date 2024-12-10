@@ -141,9 +141,6 @@ const Signup = () => {
                         <h1 className="text-3xl font-bold text-green-700 mb-4">
                             Create Your Account
                         </h1>
-                        <p className="text-gray-500">
-                            Join ESG Insights to transform your sustainability reporting
-                        </p>
                     </div>
 
                     <Form {...form}>

@@ -125,7 +125,7 @@ const Login = () => {
                             Welcome Back
                         </h1>
                         <p className="text-gray-500">
-                            Log in to continue your sustainability journey
+                            Log in 
                         </p>
                     </div>
 
