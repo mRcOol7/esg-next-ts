@@ -2,9 +2,8 @@ import NextAuth from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 import FacebookProvider from "next-auth/providers/facebook";
 import TwitterProvider from "next-auth/providers/twitter";
-import { AuthOptions } from "next-auth";
 
-export const authOptions: AuthOptions = {
+const handler = NextAuth({
     providers: [
         GoogleProvider({
             clientId: process.env.GOOGLE_CLIENT_ID!,
@@ -84,7 +83,6 @@ export const authOptions: AuthOptions = {
             return token;
         }
     }
-};
+});
 
-const handler = NextAuth(authOptions);
 export { handler as GET, handler as POST };
