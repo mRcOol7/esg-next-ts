@@ -1,0 +1,184 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  h1 {
+    @apply text-2xl;
+  }
+  h2 {
+    @apply text-xl;
+  }
+}
+
+@layer utilities {
+  .animate-wiggle {
+    animation: wiggle 2s ease-in-out infinite;
+  }
+}
+
+@keyframes wiggle {
+  0% {
+    transform: rotate(0deg);
+  }
+  25% {
+    transform: rotate(5deg);
+  }
+  50% {
+    transform: rotate(0deg);
+  }
+  75% {
+    transform: rotate(-5deg);
+  }
+
+  100% {
+    transform: rotate(0deg);
+  }
+}
+
+html,
+body {
+  padding: 0;
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Oxygen,
+    Ubuntu, Cantarell, Fira Sans, Droid Sans, Helvetica Neue, sans-serif;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+:root {
+  --font-geist-sans: "GeistSans", sans-serif;
+  --font-geist-mono: "GeistMono", monospace;
+}
+
+@font-face {
+  font-family: "GeistSans";
+  src: url("/fonts/GeistVF.woff") format("woff");
+  font-weight: 100 900;
+  font-display: swap;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "GeistMono";
+  src: url("/fonts/GeistMonoVF.woff") format("woff");
+  font-weight: 100 900;
+  font-display: swap;
+  font-style: normal;
+}
+
+.Signup,
+.Login {
+  @apply bg-transparent min-h-screen flex items-center justify-center p-4;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+
+.Signup-Text,
+.Login-Text {
+  @apply text-3xl font-bold text-center mb-8 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent;
+}
+
+.SignupForm,
+.LoginForm {
+  @apply space-y-6 w-full max-w-md bg-transparent p-6 rounded-2xl shadow-xl bg-opacity-90 backdrop-filter backdrop-blur-md bg-clip-border backdrop-saturate-200 backdrop-brightness-150; 
+  animation: fadeIn 0.5s ease-out;
+}
+
+.social-buttons {
+  @apply flex gap-4 justify-center mt-6;
+}
+
+.social-button {
+  @apply p-3 rounded-full transition-transform hover:scale-110 hover:shadow-md;
+}
+
+.social-button.facebook {
+  @apply bg-blue-500 text-white hover:bg-blue-600;
+}
+
+.social-button.google {
+  @apply bg-red-500 text-white hover:bg-red-600;
+}
+
+.social-button.twitter {
+  @apply bg-sky-500 text-white hover:bg-sky-600;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.form-field-animate {
+  @apply transition-all duration-300 ease-in-out;
+}
+
+.form-field-animate:focus-within {
+  @apply transform scale-[1.02];
+}
+
+input {
+  @apply transition-all duration-200;
+}
+
+input:focus {
+  @apply ring-2 ring-purple-500 ring-offset-2;
+} 
+
+.form-message {
+  animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.SignupButton {
+  @apply relative flex justify-center w-full px-4 py-2 text-sm font-medium text-black bg-primary border border-primary rounded-md shadow-sm hover:bg-primary/90;
+}
+
+.SignupButton:hover {
+  @apply bg-primary/90;
+}
+
+.SignupButton:active {
+  @apply bg-primary/80;
+}
+
+.SignupButton:disabled {
+  @apply bg-primary/50;
+}
+
+.SignupButton:disabled:hover {
+  @apply bg-primary/50;
+}
+
