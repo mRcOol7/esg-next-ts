@@ -35,26 +35,26 @@ const ProfilePage = () => {
         <>
             <NextTopLoader color="#4ade80" height={3} showSpinner={false} />
             <Navbar />
-            <div className="min-h-screen bg-gray-50">
-                <div className="relative overflow-hidden pt-24 pb-12 lg:pt-32">
+            <div className="mx-auto  bg-gray-50">
+                <div className="relative overflow-hidden pt-24 pb-12 lg:pt-32 ">
                     <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
                         <Avatar>
                             <AvatarImage src={userData.avatar} alt={userData.name} />
                             <AvatarFallback>{userData.name}</AvatarFallback>
                         </Avatar>
-                        <h1 className="text-4xl font-extrabold text-gray-900 sm:text-5xl sm:tracking-tight lg:text-6xl">
-                            {userData.name}
-                        </h1>
+                        <div className="mt-6 text-center">
+                            <h1 className="text-3xl font-bold text-gray-900">{userData.name}</h1>
+                            <p className="text-sm font-medium text-gray-500">{userData.email}</p>
+                        </div>
                     </div>
                 </div>
                 {/* //profile tabs */}
                 <div>
-                    <Tabs className="space-y-4" defaultValue="personal">
+                    <Tabs className="space-y-4 w-full" defaultValue="personal">
                         <TabsList className="grid w-full grid-cols-3">
                             <TabsTrigger value="personal">Personal</TabsTrigger>
                             <TabsTrigger value="address">Address</TabsTrigger>
                             <TabsTrigger value="work">Work</TabsTrigger>
-                            <TabsTrigger value="settings">Settings</TabsTrigger>
                         </TabsList>
                         <TabsContent value="personal">
                             <Card>
@@ -78,10 +78,6 @@ const ProfilePage = () => {
                                         <div>
                                             <label className="text-sm font-medium text-gray-500">Email</label>
                                             <p className="text-lg">{userData.email}</p>
-                                        </div>
-                                        <div>
-                                            <label className="text-sm font-medium text-gay-500">Phone</label>
-                                            <p className="text-lg">{userData.phone}</p>
                                         </div>
                                     </div>
                                 </CardContent>
