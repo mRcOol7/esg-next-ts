@@ -3,10 +3,12 @@
 import * as React from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
+import { useSession } from "next-auth/react"
 import { Menu, X } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
+import LogoutButton from "@/components/logout-button"
 
 const navItems = [
   {
@@ -19,6 +21,7 @@ const navItems = [
 const Navbar = () => {
   const pathname = usePathname()
   const [isMenuOpen, setIsMenuOpen] = React.useState(false)
+  const { status, data: session } = useSession()
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen)
@@ -61,16 +64,24 @@ const Navbar = () => {
           </nav>
 
           <div className="hidden md:flex items-center space-x-4">
-            <Link href="/login">
-              <Button variant="outline" className="border-green-600 text-green-600 hover:bg-green-50">
-                Log In
-              </Button>
-            </Link>
-            <Link href="/signup">
-              <Button className="bg-green-600 hover:bg-green-700 text-white">
-                Sign Up
-              </Button>
-            </Link>
+            {status === "loading" ? (
+              <div className="w-20 h-10 bg-gray-100 animate-pulse rounded-md" />
+            ) : session ? (
+              <LogoutButton />
+            ) : (
+              <>
+                <Link href="/login">
+                  <Button variant="outline" className="border-green-600 text-green-600 hover:bg-green-50">
+                    Log In
+                  </Button>
+                </Link>
+                <Link href="/signup">
+                  <Button className="bg-green-600 hover:bg-green-700 text-white">
+                    Sign Up
+                  </Button>
+                </Link>
+              </>
+            )}
           </div>
 
           {isMenuOpen && (

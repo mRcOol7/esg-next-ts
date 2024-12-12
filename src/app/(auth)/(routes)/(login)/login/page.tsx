@@ -1,22 +1,21 @@
 "use client"
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
-import * as zod from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { useRouter } from "next/navigation";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as zod from "zod";
 import {
     Form,
     FormField,
     FormControl,
     FormItem,
     FormLabel,
-    FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { FaFacebook, FaGoogle, FaTwitter, FaEye, FaEyeSlash } from "react-icons/fa";
 import Link from "next/link";
-import {signIn} from "next-auth/react"
+import { signIn } from "next-auth/react";
 import Navbar from "@/app/navbar/navbar";
 
 const formSchema = zod.object({
@@ -24,8 +23,9 @@ const formSchema = zod.object({
     password: zod.string().min(6, "Password must be at least 6 characters"),
 });
 
-const Login = () => {
+const Login = (): React.JSX.Element => {
     const [showPassword, setShowPassword] = useState(false);
+    const router = useRouter();
 
     const form = useForm<zod.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
@@ -34,27 +34,10 @@ const Login = () => {
             password: "",
         },
     });
-
-    const router = useRouter();
-
-    async function onSubmit(data: zod.infer<typeof formSchema>) {
-        try {
-            const result = await signIn('credentials', {
-                email: data.email,
-                password: data.password,
-                redirect: false,
-            });
-
-            if (result?.error) {
-                console.error('Sign-in error:', result.error);
-            } else {
-                router.push("/home");
-            }
-        } catch (error) {
-            console.error('Sign-in error:', error);
-        }
+    
+    function onSubmit() {
+        router.push("/home");
     }
-
 
     const handleSignIn = async () => {
         try {
@@ -110,10 +93,6 @@ const Login = () => {
         await handleSignIn();
     };
 
-    const togglePasswordVisibility = () => {
-        setShowPassword(!showPassword);
-    };
-
     return (
         <div className="min-h-screen bg-gray-50 flex flex-col">
             <Navbar />
@@ -130,24 +109,20 @@ const Login = () => {
                     </div>
 
                     <Form {...form}>
-                        <form 
-                            onSubmit={form.handleSubmit(onSubmit)} 
-                            className="space-y-6"
-                        >
+                        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                             <FormField
                                 control={form.control}
                                 name="email"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel className="text-gray-700">Email</FormLabel>
+                                        <FormLabel>Email</FormLabel>
                                         <FormControl>
                                             <Input 
-                                                placeholder="Enter your email address" 
+                                                placeholder="Enter your email" 
                                                 {...field}
                                                 className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-green-500 transition-all duration-300"
                                             />
                                         </FormControl>
-                                        <FormMessage className="text-red-500 text-sm" />
                                     </FormItem>
                                 )}
                             />
@@ -157,7 +132,7 @@ const Login = () => {
                                 name="password"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel className="text-gray-700">Password</FormLabel>
+                                        <FormLabel>Password</FormLabel>
                                         <FormControl>
                                             <div className="relative">
                                                 <Input 
@@ -168,14 +143,13 @@ const Login = () => {
                                                 />
                                                 <button
                                                     type="button"
-                                                    onClick={togglePasswordVisibility}
+                                                    onClick={() => setShowPassword(!showPassword)}
                                                     className="absolute inset-y-0 right-0 px-3 flex items-center"
                                                 >
                                                     {showPassword ? <FaEyeSlash /> : <FaEye />}
                                                 </button>
                                             </div>
                                         </FormControl>
-                                        <FormMessage className="text-red-500 text-sm" />
                                     </FormItem>
                                 )}
                             />
@@ -193,7 +167,7 @@ const Login = () => {
                                 type="submit" 
                                 className="w-full bg-green-600 hover:bg-green-700 text-white py-3 rounded-lg transition-colors duration-300 ease-in-out transform hover:scale-105"
                             >
-                                Log In
+                                Login
                             </Button>
                         </form>
                     </Form>
@@ -216,6 +190,7 @@ const Login = () => {
                                 <FaTwitter size={20} />
                             </button>
                         </div>
+                    
                     </div>
                     
                     <p className="text-center text-gray-600 mt-4">
