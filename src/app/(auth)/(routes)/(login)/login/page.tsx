@@ -62,7 +62,7 @@ const Login = (): React.JSX.Element => {
         try {
             const callbackUrl = `${window.location.origin}/home`;
             
-            result = await signIn('google', {
+           await signIn('google', {
                 callbackUrl,
                 redirect: true
             });
