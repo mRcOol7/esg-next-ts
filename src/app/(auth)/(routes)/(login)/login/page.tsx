@@ -1,10 +1,11 @@
 "use client"
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { useForm } from "react-hook-form";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as zod from "zod";
+import { useSession } from "next-auth/react";
 import {
     Form,
     FormField,
@@ -27,6 +28,15 @@ const Login = (): React.JSX.Element => {
     const [showPassword, setShowPassword] = useState(false);
     const [error, setError] = useState("");
     const router = useRouter();
+    const { status } = useSession();
+    const searchParams = useSearchParams();
+    const callbackUrl = searchParams.get("callbackUrl") || "/home";
+
+    useEffect(() => {
+        if (status === "authenticated") {
+            router.push(callbackUrl);
+        }
+    }, [status, router, callbackUrl]);
 
     const form = useForm<zod.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
@@ -36,7 +46,6 @@ const Login = (): React.JSX.Element => {
         },
     });
 
-
     async function onSubmit(data: zod.infer<typeof formSchema>) {
         setError(""); // Clear any previous errors
         try {
@@ -44,13 +53,13 @@ const Login = (): React.JSX.Element => {
                 email: data.email,
                 password: data.password,
                 redirect: false,
-                callbackUrl: `${window.location.origin}/home`
+                callbackUrl: callbackUrl
             });
             
             if (response?.error) {
                 setError(response.error);
             } else if (response?.ok) {
-                router.push('/home');
+                router.push(callbackUrl);
             }
         } catch (error) {
             console.error('Sign-in error:', error);
@@ -60,8 +69,6 @@ const Login = (): React.JSX.Element => {
 
     const handleGoogleSignIn = async () => {
         try {
-            const callbackUrl = `${window.location.origin}/home`;
-            
             const result = await signIn('google', {
                 callbackUrl,
                 redirect: false
@@ -70,7 +77,7 @@ const Login = (): React.JSX.Element => {
             if (result?.error) {
                 console.error('Error signing in with Google:', result.error);
             } else if (result?.url) {
-                window.location.href = result.url;
+                router.push(result.url);
             }
         } catch (error) {
             console.error('Error signing in with Google:', error);
@@ -80,14 +87,14 @@ const Login = (): React.JSX.Element => {
     const handleTwitterSignIn = async () => {
         try {
             const result = await signIn('twitter', {
-                callbackUrl: `${window.location.origin}/home`,
+                callbackUrl,
                 redirect: false
             });
 
             if (result?.error) {
                 console.error('Error signing in with Twitter:', result.error);
             } else if (result?.url) {
-                window.location.href = result.url;
+                router.push(result.url);
             }
         } catch (error) {
             console.error('Error signing in with Twitter:', error);
@@ -97,14 +104,14 @@ const Login = (): React.JSX.Element => {
     const handleFacebookSignIn = async () => {
         try {
             const result = await signIn('facebook', {
-                callbackUrl: `${window.location.origin}/home`,
+                callbackUrl,
                 redirect: false
             });
 
             if (result?.error) {
                 console.error('Error signing in with Facebook:', result.error);
             } else if (result?.url) {
-                window.location.href = result.url;
+                router.push(result.url);
             }
         } catch (error) {
             console.error('Error signing in with Facebook:', error);
