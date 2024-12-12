@@ -58,25 +58,37 @@ const Login = (): React.JSX.Element => {
         }
     }
 
-    const handleSignIn = async () => {
+    const handleGoogleSignIn = async () => {
         try {
             const callbackUrl = `${window.location.origin}/home`;
             
-           await signIn('google', {
+            const result = await signIn('google', {
                 callbackUrl,
-                redirect: true
+                redirect: false
             });
+
+            if (result?.error) {
+                console.error('Error signing in with Google:', result.error);
+            } else if (result?.url) {
+                window.location.href = result.url;
+            }
         } catch (error) {
-            console.error('Error signing in:', error);
+            console.error('Error signing in with Google:', error);
         }
     };
 
     const handleTwitterSignIn = async () => {
         try {
-             await signIn('twitter', {
+            const result = await signIn('twitter', {
                 callbackUrl: `${window.location.origin}/home`,
-                redirect: true
+                redirect: false
             });
+
+            if (result?.error) {
+                console.error('Error signing in with Twitter:', result.error);
+            } else if (result?.url) {
+                window.location.href = result.url;
+            }
         } catch (error) {
             console.error('Error signing in with Twitter:', error);
         }
@@ -84,19 +96,19 @@ const Login = (): React.JSX.Element => {
 
     const handleFacebookSignIn = async () => {
         try {
-            await signIn('facebook', {
+            const result = await signIn('facebook', {
                 callbackUrl: `${window.location.origin}/home`,
-                redirect: true
+                redirect: false
             });
+
+            if (result?.error) {
+                console.error('Error signing in with Facebook:', result.error);
+            } else if (result?.url) {
+                window.location.href = result.url;
+            }
         } catch (error) {
             console.error('Error signing in with Facebook:', error);
         }
-    };
-
-    const handleClick: React.MouseEventHandler<HTMLButtonElement> = async (event) => {
-        event.preventDefault();
-        await handleSignIn();
-        console.log('Sign-in button clicked');
     };
 
     return (
@@ -195,7 +207,7 @@ const Login = (): React.JSX.Element => {
                             <button className="p-3 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition-colors" onClick={handleFacebookSignIn}>
                                 <FaFacebook size={20} />
                             </button>
-                            <button className="p-3 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors" onClick={handleClick}>
+                            <button className="p-3 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors" onClick={handleGoogleSignIn}>
                                 <FaGoogle size={20} />
                             </button>
                             <button className="p-3 bg-blue-400 text-white rounded-full hover:bg-blue-500 transition-colors" onClick={handleTwitterSignIn}>
