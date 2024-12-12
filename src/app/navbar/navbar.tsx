@@ -15,6 +15,11 @@ const navItems = [
     title: "Home",
     href: "/home",
     description: "Dashboard overview"
+  },
+  {
+    title: "Profile",
+    href: "/profile",
+    description: "Manage your account settings and preferences."
   }
 ]
 
