@@ -3,12 +3,12 @@
 import * as React from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { useSession } from "next-auth/react"
 import { Menu, X } from "lucide-react"
+import { useSession } from "next-auth/react"
+import LogoutButton from "@/components/logout-button"
 
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
-import LogoutButton from "@/components/logout-button"
 
 const navItems = [
   {
@@ -19,14 +19,14 @@ const navItems = [
   {
     title: "Profile",
     href: "/profile",
-    description: "Manage your account settings and preferences."
+    description: "View your profile"
   }
 ]
 
 const Navbar = () => {
   const pathname = usePathname()
   const [isMenuOpen, setIsMenuOpen] = React.useState(false)
-  const { status, data: session } = useSession()
+  const { data: session, status } = useSession()
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen)
@@ -112,21 +112,29 @@ const Navbar = () => {
                 ))}
                 
                 <div className="flex flex-col space-y-3 w-full px-4 pt-6 mt-4">
-                  <Link href="/login" onClick={toggleMenu} className="w-full">
-                    <Button 
-                      variant="outline" 
-                      className="w-full border-green-600 text-green-600 hover:bg-green-50 transition-all duration-200 shadow-sm"
-                    >
-                      Log In
-                    </Button>
-                  </Link>
-                  <Link href="/signup" onClick={toggleMenu} className="w-full">
-                    <Button 
-                      className="w-full bg-green-600 hover:bg-green-700 text-white transition-all duration-200 shadow-sm"
-                    >
-                      Sign Up
-                    </Button>
-                  </Link>
+                  {status === "loading" ? (
+                    <div className="w-full h-10 bg-gray-100 animate-pulse rounded-md" />
+                  ) : session ? (
+                    <LogoutButton />
+                  ) : (
+                    <>
+                      <Link href="/login" onClick={toggleMenu} className="w-full">
+                        <Button 
+                          variant="outline" 
+                          className="w-full border-green-600 text-green-600 hover:bg-green-50 transition-all duration-200 shadow-sm"
+                        >
+                          Log In
+                        </Button>
+                      </Link>
+                      <Link href="/signup" onClick={toggleMenu} className="w-full">
+                        <Button 
+                          className="w-full bg-green-600 hover:bg-green-700 text-white transition-all duration-200 shadow-sm"
+                        >
+                          Sign Up
+                        </Button>
+                      </Link>
+                    </>
+                  )}
                 </div>
               </div>
             </div>
