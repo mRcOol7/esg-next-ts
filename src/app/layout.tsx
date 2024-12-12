@@ -16,7 +16,7 @@ const geistMono = localFont({
 
 export const metadata: Metadata = {
   title: "ESG",
-  description: "ESG",
+  description: "Encoraa-ESG",
 };
 
 export default function RootLayout({
