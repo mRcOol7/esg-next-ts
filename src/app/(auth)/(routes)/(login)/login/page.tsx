@@ -1,22 +1,22 @@
 "use client"
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { useForm } from "react-hook-form";
-import { useRouter, useSearchParams } from "next/navigation";
-import { zodResolver } from "@hookform/resolvers/zod";
 import * as zod from "zod";
-import { useSession } from "next-auth/react";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import { useRouter } from "next/navigation";
 import {
     Form,
     FormField,
     FormControl,
     FormItem,
     FormLabel,
+    FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { FaFacebook, FaGoogle, FaTwitter, FaEye, FaEyeSlash } from "react-icons/fa";
 import Link from "next/link";
-import { signIn } from "next-auth/react";
+import {signIn} from "next-auth/react"
 import Navbar from "@/app/navbar/navbar";
 
 const formSchema = zod.object({
@@ -24,19 +24,8 @@ const formSchema = zod.object({
     password: zod.string().min(6, "Password must be at least 6 characters"),
 });
 
-const Login = (): React.JSX.Element => {
+const Login = () => {
     const [showPassword, setShowPassword] = useState(false);
-    const [error, setError] = useState("");
-    const router = useRouter();
-    const { status } = useSession();
-    const searchParams = useSearchParams();
-    const callbackUrl = searchParams.get("callbackUrl") || "/home";
-
-    useEffect(() => {
-        if (status === "authenticated") {
-            router.push(callbackUrl);
-        }
-    }, [status, router, callbackUrl]);
 
     const form = useForm<zod.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
@@ -46,55 +35,54 @@ const Login = (): React.JSX.Element => {
         },
     });
 
+    const router = useRouter();
+
     async function onSubmit(data: zod.infer<typeof formSchema>) {
-        setError(""); // Clear any previous errors
         try {
-            const response = await signIn('credentials', {
+            const result = await signIn('credentials', {
                 email: data.email,
                 password: data.password,
                 redirect: false,
-                callbackUrl: callbackUrl
-            });
-            
-            if (response?.error) {
-                setError(response.error);
-            } else if (response?.ok) {
-                router.push(callbackUrl);
-            }
-        } catch (error) {
-            console.error('Sign-in error:', error);
-            setError("An unexpected error occurred");
-        }
-    }
-
-    const handleGoogleSignIn = async () => {
-        try {
-            const result = await signIn('google', {
-                callbackUrl,
-                redirect: false
             });
 
             if (result?.error) {
-                console.error('Error signing in with Google:', result.error);
-            } else if (result?.url) {
-                router.push(result.url);
+                console.error('Sign-in error:', result.error);
+            } else {
+                router.push("/home");
             }
         } catch (error) {
-            console.error('Error signing in with Google:', error);
+            console.error('Sign-in error:', error);
+        }
+    }
+
+
+    const handleSignIn = async () => {
+        try {
+            const result = await signIn('google', {
+                callbackUrl: '/',
+                redirect: false
+            });
+            
+            if (result?.error) {
+                console.error('Sign-in error:', result.error);
+            } else if (result?.ok) {
+                window.location.href = result.url || '/';
+            }
+        } catch (error) {
+            console.error('Error signing in:', error);
         }
     };
 
     const handleTwitterSignIn = async () => {
         try {
             const result = await signIn('twitter', {
-                callbackUrl,
-                redirect: false
+                callbackUrl: `${window.location.origin}/`,
+                redirect: true
             });
-
             if (result?.error) {
-                console.error('Error signing in with Twitter:', result.error);
-            } else if (result?.url) {
-                router.push(result.url);
+                console.error('Sign-in failed:', result.error);
+            } else if (result?.ok) {
+                window.location.href = result.url || '/';
             }
         } catch (error) {
             console.error('Error signing in with Twitter:', error);
@@ -104,18 +92,26 @@ const Login = (): React.JSX.Element => {
     const handleFacebookSignIn = async () => {
         try {
             const result = await signIn('facebook', {
-                callbackUrl,
-                redirect: false
+                callbackUrl: `${window.location.origin}/`,
+                redirect: true
             });
-
             if (result?.error) {
-                console.error('Error signing in with Facebook:', result.error);
-            } else if (result?.url) {
-                router.push(result.url);
+                console.error('Sign-in failed:', result.error);
+            } else if (result?.ok) {
+                window.location.href = result.url || '/';
             }
         } catch (error) {
             console.error('Error signing in with Facebook:', error);
         }
+    };
+
+    const handleClick: React.MouseEventHandler<HTMLButtonElement> = async (event) => {
+        event.preventDefault();
+        await handleSignIn();
+    };
+
+    const togglePasswordVisibility = () => {
+        setShowPassword(!showPassword);
     };
 
     return (
@@ -134,20 +130,24 @@ const Login = (): React.JSX.Element => {
                     </div>
 
                     <Form {...form}>
-                        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                        <form 
+                            onSubmit={form.handleSubmit(onSubmit)} 
+                            className="space-y-6"
+                        >
                             <FormField
                                 control={form.control}
                                 name="email"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Email</FormLabel>
+                                        <FormLabel className="text-gray-700">Email</FormLabel>
                                         <FormControl>
                                             <Input 
-                                                placeholder="Enter your email" 
+                                                placeholder="Enter your email address" 
                                                 {...field}
                                                 className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-green-500 transition-all duration-300"
                                             />
                                         </FormControl>
+                                        <FormMessage className="text-red-500 text-sm" />
                                     </FormItem>
                                 )}
                             />
@@ -157,7 +157,7 @@ const Login = (): React.JSX.Element => {
                                 name="password"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Password</FormLabel>
+                                        <FormLabel className="text-gray-700">Password</FormLabel>
                                         <FormControl>
                                             <div className="relative">
                                                 <Input 
@@ -168,13 +168,14 @@ const Login = (): React.JSX.Element => {
                                                 />
                                                 <button
                                                     type="button"
-                                                    onClick={() => setShowPassword(!showPassword)}
+                                                    onClick={togglePasswordVisibility}
                                                     className="absolute inset-y-0 right-0 px-3 flex items-center"
                                                 >
                                                     {showPassword ? <FaEyeSlash /> : <FaEye />}
                                                 </button>
                                             </div>
                                         </FormControl>
+                                        <FormMessage className="text-red-500 text-sm" />
                                     </FormItem>
                                 )}
                             />
@@ -188,17 +189,11 @@ const Login = (): React.JSX.Element => {
                                 </Link>
                             </div>
                             
-                            {error && (
-                                <div className="text-red-500 text-sm mt-2">
-                                    {error}
-                                </div>
-                            )}
-                            
                             <Button 
                                 type="submit" 
                                 className="w-full bg-green-600 hover:bg-green-700 text-white py-3 rounded-lg transition-colors duration-300 ease-in-out transform hover:scale-105"
                             >
-                                Login
+                                Log In
                             </Button>
                         </form>
                     </Form>
@@ -214,14 +209,13 @@ const Login = (): React.JSX.Element => {
                             <button className="p-3 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition-colors" onClick={handleFacebookSignIn}>
                                 <FaFacebook size={20} />
                             </button>
-                            <button className="p-3 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors" onClick={handleGoogleSignIn}>
+                            <button className="p-3 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors" onClick={handleClick}>
                                 <FaGoogle size={20} />
                             </button>
                             <button className="p-3 bg-blue-400 text-white rounded-full hover:bg-blue-500 transition-colors" onClick={handleTwitterSignIn}>
                                 <FaTwitter size={20} />
                             </button>
                         </div>
-                    
                     </div>
                     
                     <p className="text-center text-gray-600 mt-4">
