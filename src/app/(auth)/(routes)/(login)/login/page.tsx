@@ -25,6 +25,7 @@ const formSchema = zod.object({
 
 const Login = (): React.JSX.Element => {
     const [showPassword, setShowPassword] = useState(false);
+    const [error, setError] = useState("");
     const router = useRouter();
 
     const form = useForm<zod.infer<typeof formSchema>>({
@@ -34,22 +35,43 @@ const Login = (): React.JSX.Element => {
             password: "",
         },
     });
-    
-    function onSubmit() {
-        router.push("/home");
+
+
+    async function onSubmit(data: zod.infer<typeof formSchema>) {
+        setError(""); // Clear any previous errors
+        try {
+            const response = await signIn('credentials', {
+                email: data.email,
+                password: data.password,
+                redirect: false,
+                callbackUrl: '/home'
+            });
+            
+            if (response?.error) {
+                setError(response.error);
+            } else if (response?.ok) {
+                router.push('/home');
+            }
+        } catch (error) {
+            console.error('Sign-in error:', error);
+            setError("An unexpected error occurred");
+        }
     }
 
     const handleSignIn = async () => {
         try {
+            const searchParams = new URLSearchParams(window.location.search);
+            const callbackUrl = searchParams.get('callbackUrl') || '/home';
+            
             const result = await signIn('google', {
-                callbackUrl: '/',
+                callbackUrl,
                 redirect: false
             });
             
             if (result?.error) {
                 console.error('Sign-in error:', result.error);
             } else if (result?.ok) {
-                window.location.href = result.url || '/';
+                router.push(result.url || callbackUrl);
             }
         } catch (error) {
             console.error('Error signing in:', error);
@@ -62,6 +84,7 @@ const Login = (): React.JSX.Element => {
                 callbackUrl: `${window.location.origin}/`,
                 redirect: true
             });
+            console.log(result)
             if (result?.error) {
                 console.error('Sign-in failed:', result.error);
             } else if (result?.ok) {
@@ -91,6 +114,7 @@ const Login = (): React.JSX.Element => {
     const handleClick: React.MouseEventHandler<HTMLButtonElement> = async (event) => {
         event.preventDefault();
         await handleSignIn();
+        console.log('Sign-in button clicked');
     };
 
     return (
@@ -162,6 +186,12 @@ const Login = (): React.JSX.Element => {
                                     Forgot Password?
                                 </Link>
                             </div>
+                            
+                            {error && (
+                                <div className="text-red-500 text-sm mt-2">
+                                    {error}
+                                </div>
+                            )}
                             
                             <Button 
                                 type="submit" 

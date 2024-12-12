@@ -62,7 +62,7 @@ const ProfilePage = () => {
                                     <CardTitle>Personal</CardTitle>
                                 </CardHeader>
                                 <CardContent className="space-y-4">
-                                    <div className="space-y-1 ">
+                                    <div className="grid grid-cols-1 gap-4 space-y-1 ">
                                         <div>
                                             <label className="text-sm font-medium text-gray-500">Name</label>
                                             <p className="text-lg">{userData.name}</p>
@@ -89,7 +89,7 @@ const ProfilePage = () => {
                                     <CardTitle>Address</CardTitle>
                                 </CardHeader>
                                 <CardContent className="space-y-2">
-                                    <div className="space-y-1 ">
+                                    <div className="groid grid-cols-1 gap-4 space-y-1 ">
                                         <div>
                                             <label className="text-sm font-medium text-gray-500">Street</label>
                                             <p className="text-lg">{userData.address.street}</p>
@@ -120,7 +120,7 @@ const ProfilePage = () => {
                                     <CardTitle>Work</CardTitle>
                                 </CardHeader>
                                 <CardContent className="space-y-2">
-                                    <div className="space-y-1 ">
+                                    <div className="grid grid-cols-1 gap-4 space-y-1 ">
                                         <div>
                                             <label className="text-sm font-medium text-gray-500">Company</label>
                                             <p className="text-lg">{userData.workInfo.company}</p>
