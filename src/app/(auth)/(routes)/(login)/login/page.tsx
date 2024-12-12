@@ -44,7 +44,7 @@ const Login = (): React.JSX.Element => {
                 email: data.email,
                 password: data.password,
                 redirect: false,
-                callbackUrl: '/home'
+                callbackUrl: `${window.location.origin}/home`
             });
             
             if (response?.error) {
@@ -60,19 +60,12 @@ const Login = (): React.JSX.Element => {
 
     const handleSignIn = async () => {
         try {
-            const searchParams = new URLSearchParams(window.location.search);
-            const callbackUrl = searchParams.get('callbackUrl') || '/home';
+            const callbackUrl = `${window.location.origin}/home`;
             
-            const result = await signIn('google', {
+            result = await signIn('google', {
                 callbackUrl,
-                redirect: false
+                redirect: true
             });
-            
-            if (result?.error) {
-                console.error('Sign-in error:', result.error);
-            } else if (result?.ok) {
-                router.push(result.url || callbackUrl);
-            }
         } catch (error) {
             console.error('Error signing in:', error);
         }
@@ -80,16 +73,10 @@ const Login = (): React.JSX.Element => {
 
     const handleTwitterSignIn = async () => {
         try {
-            const result = await signIn('twitter', {
-                callbackUrl: `${window.location.origin}/`,
+             await signIn('twitter', {
+                callbackUrl: `${window.location.origin}/home`,
                 redirect: true
             });
-            console.log(result)
-            if (result?.error) {
-                console.error('Sign-in failed:', result.error);
-            } else if (result?.ok) {
-                window.location.href = result.url || '/';
-            }
         } catch (error) {
             console.error('Error signing in with Twitter:', error);
         }
@@ -97,15 +84,10 @@ const Login = (): React.JSX.Element => {
 
     const handleFacebookSignIn = async () => {
         try {
-            const result = await signIn('facebook', {
-                callbackUrl: `${window.location.origin}/`,
+            await signIn('facebook', {
+                callbackUrl: `${window.location.origin}/home`,
                 redirect: true
             });
-            if (result?.error) {
-                console.error('Sign-in failed:', result.error);
-            } else if (result?.ok) {
-                window.location.href = result.url || '/';
-            }
         } catch (error) {
             console.error('Error signing in with Facebook:', error);
         }
