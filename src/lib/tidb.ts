@@ -1,6 +1,4 @@
 import mysql from 'mysql2/promise';
-import path from 'path';
-import fs from 'fs';
 
 // Ensure all required environment variables are set
 if (
@@ -9,40 +7,16 @@ if (
   !process.env.TIDB_USER ||
   !process.env.TIDB_PASSWORD ||
   !process.env.TIDB_DATABASE ||
-  !process.env.TIDB_CA_CERT
+  !process.env.TIDB_SSL_CERT
 ) {
   console.error('TiDB environment variables are not properly configured');
   throw new Error('TiDB environment variables are required');
 }
 
-// Path to the SSL certificate
-const certPath = path.resolve(process.cwd(), process.env.TIDB_CA_CERT);
-
-// Verify and load the certificate
-const verifyCertificate = () => {
-  try {
-    if (!fs.existsSync(certPath)) {
-      throw new Error(`SSL certificate not found at: ${certPath}`);
-    }
-    
-    const cert = fs.readFileSync(certPath).toString();
-    
-    // Basic certificate validation checks
-    if (!cert.includes('-----BEGIN CERTIFICATE-----') || !cert.includes('-----END CERTIFICATE-----')) {
-      throw new Error('Invalid certificate format');
-    }
-    
-    return cert;
-  } catch (error) {
-    console.error('Certificate verification failed:', error);
-    throw error;
-  }
-};
-
 // SSL configuration
 const sslConfig: mysql.SslOptions = {
   rejectUnauthorized: true, // Ensure SSL verification is enabled
-  ca: verifyCertificate(), // Load and verify the certificate
+  ca: process.env.TIDB_SSL_CERT, // Directly use the certificate from env var
 };
 
 // Create a MySQL connection pool
