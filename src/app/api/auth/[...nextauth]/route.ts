@@ -89,21 +89,46 @@ const handler = NextAuth({
         signOut: '/'
     },
     callbacks: {
-        async redirect({ url, baseUrl }) {
-            if (url.startsWith("/")) return `${baseUrl}${url}`;
-            else if (new URL(url).origin === baseUrl) return url;
-            return baseUrl;
+        async redirect() {
+            // Always redirect to home after sign in
+            return '/home';
         },
         async session({ session, token }) {
-            return { ...session, token };
+            if (token && session.user) {
+                session.user.id = token.sub;
+                session.accessToken = token.accessToken;
+            }
+            return session;
         },
         async jwt({ token, user, account }) {
             if (account && user) {
-                return {
-                    ...token,
-                    accessToken: account.access_token,
-                    userId: user.id,
-                };
+                token.accessToken = account.access_token;
+                token.id = user.id;
+                
+                // Store user data in Redis after successful social sign-in
+                try {
+                    const response = await fetch(`${process.env.NEXTAUTH_URL}/api/user/social`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            userId: user.id,
+                            provider: account.provider,
+                            socialData: {
+                                id: user.id,
+                                email: user.email,
+                                name: user.name,
+                                image: user.image,
+                                accessToken: account.access_token,
+                            }
+                        })
+                    });
+
+                    if (!response.ok) {
+                        console.error('Failed to store social user data');
+                    }
+                } catch (error) {
+                    console.error('Error storing social user data:', error);
+                }
             }
             return token;
         }

@@ -4,7 +4,9 @@ import { Button } from "@/components/ui/button";
 import * as zod from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
-import { useRouter } from "next/navigation";
+import { signIn } from "next-auth/react"
+import { FaFacebook, FaGoogle, FaTwitter, FaEye, FaEyeSlash } from "react-icons/fa";
+import Link from "next/link";
 import {
     Form,
     FormField,
@@ -14,9 +16,6 @@ import {
     FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { FaFacebook, FaGoogle, FaTwitter, FaEye, FaEyeSlash } from "react-icons/fa";
-import Link from "next/link";
-import {signIn} from "next-auth/react"
 import Navbar from "@/app/navbar/navbar";
 
 const formSchema = zod.object({
@@ -35,21 +34,16 @@ const Login = () => {
         },
     });
 
-    const router = useRouter();
-
     async function onSubmit(data: zod.infer<typeof formSchema>) {
         try {
-            const result = await signIn('credentials', {
+            await signIn('credentials', {
                 email: data.email,
                 password: data.password,
-                redirect: false,
+                callbackUrl: '/home',
+                redirect: true,
             });
-
-            if (result?.error) {
-                console.error('Sign-in error:', result.error);
-            } else {
-                router.push("/home");
-            }
+            
+            // No need to handle redirect manually as NextAuth will handle it
         } catch (error) {
             console.error('Sign-in error:', error);
         }
@@ -58,18 +52,15 @@ const Login = () => {
 
     const handleSignIn = async () => {
         try {
-            const result = await signIn('google', {
-                callbackUrl: '/',
-                redirect: false
+            console.log('🚀 Starting Google sign-in...');
+            await signIn('google', {
+                callbackUrl: '/home',
+                redirect: true,
             });
             
-            if (result?.error) {
-                console.error('Sign-in error:', result.error);
-            } else if (result?.ok) {
-                window.location.href = result.url || '/';
-            }
+            // The redirect will be handled by NextAuth
         } catch (error) {
-            console.error('Error signing in:', error);
+            console.error('❌ Error signing in:', error);
         }
     };
 
