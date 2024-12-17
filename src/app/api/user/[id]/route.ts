@@ -2,12 +2,15 @@ import { NextRequest, NextResponse } from 'next/server';
 import { redis } from '@/lib/redis';
 import { getUserFromTiDB } from '@/lib/db';
 
-export async function GET(
-  req: NextRequest,
-  { params }: { params: { id: string } }
-) {
+type Context = {
+  params: Promise<{ id: string }>;
+};
+
+export async function GET(_request: NextRequest, context: Context) {
   try {
+    const params = await context.params;
     const { id } = params;
+    
     if (!id) {
       return NextResponse.json(
         { error: 'User ID is required' },
