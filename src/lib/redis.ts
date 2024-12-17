@@ -128,21 +128,47 @@ class CustomRedis extends Redis {
   }
 }
 
-if (!process.env.REDIS_URL) {
-  throw new Error('REDIS_URL is not defined');
+if (!process.env.REDIS_HOST || !process.env.REDIS_PORT || !process.env.REDIS_PASSWORD) {
+  throw new Error('Redis configuration is incomplete. Please check your environment variables.');
 }
 
-// Only initialize Redis client on the server side
-const redis = (typeof window === 'undefined') ? new CustomRedis(process.env.REDIS_URL!, {
-  retryStrategy: (times) => Math.min(times * 50, 3000),
+const redis = new CustomRedis({
+  host: process.env.REDIS_HOST,
+  port: parseInt(process.env.REDIS_PORT),
+  password: process.env.REDIS_PASSWORD,
+  db: 0,
+  retryStrategy: (times) => {
+    const delay = Math.min(times * 50, 2000);
+    return delay;
+  },
   maxRetriesPerRequest: 3,
   enableReadyCheck: true,
-}) : null;
+  showFriendlyErrorStack: process.env.NODE_ENV !== 'production',
+  connectionName: process.env.REDIS_DB_NAME || 'Nehal-free-db',
+  tls: {
+    rejectUnauthorized: false
+  }
+});
 
-if (redis) {
-  redis.on('error', (err) => console.error('Redis Client Error:', err));
-  redis.on('connect', () => console.log('Successfully connected to Redis'));
-}
+// Add connection event handlers
+redis.on('error', (error) => {
+  console.error('Redis connection error:', error);
+});
+
+redis.on('connect', () => {
+  console.log('Connected to Redis successfully');
+});
+
+redis.on('ready', () => {
+  console.log('Redis client is ready');
+});
+
+// Test the connection
+redis.ping().then(() => {
+  console.log('Redis connection test successful');
+}).catch((error) => {
+  console.error('Redis connection test failed:', error);
+});
 
 export async function saveUserSocialData(userId: string, provider: string, socialData: SocialData) {
   if (redis) {
