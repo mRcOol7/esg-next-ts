@@ -170,16 +170,6 @@ const Login = () => {
                                     </FormItem>
                                 )}
                             />
-                            
-                            <div className="flex justify-end">
-                                <Link 
-                                    href="/forgot-password" 
-                                    className="text-sm text-green-600 hover:underline"
-                                >
-                                    Forgot Password?
-                                </Link>
-                            </div>
-                            
                             <Button 
                                 type="submit" 
                                 className="w-full bg-green-600 hover:bg-green-700 text-white py-3 rounded-lg transition-colors duration-300 ease-in-out transform hover:scale-105"
