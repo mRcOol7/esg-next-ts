@@ -129,11 +129,16 @@ class CustomRedis extends Redis {
 }
 
 if (!process.env.REDIS_HOST || !process.env.REDIS_PORT || !process.env.REDIS_PASSWORD) {
+  console.error('Redis configuration missing:', {
+    host: !!process.env.REDIS_HOST,
+    port: !!process.env.REDIS_PORT,
+    password: !!process.env.REDIS_PASSWORD
+  });
   throw new Error('Redis configuration is incomplete. Please check your environment variables.');
 }
 
+console.log('Initializing Redis connection...');
 const redisUrl = `redis://:${process.env.REDIS_PASSWORD}@${process.env.REDIS_HOST}:${process.env.REDIS_PORT}`;
-
 const redis = new CustomRedis(redisUrl, {
   retryStrategy: (times) => {
     const delay = Math.min(times * 50, 2000);
