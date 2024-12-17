@@ -41,25 +41,59 @@ class CustomRedis extends Redis {
 
   async saveUserData(userData: UserData): Promise<string> {
     const userId = await this.generateUserId();
-    const userDataObj = {
-      id: userData.id || userId,
-      email: userData.email,
-      username: userData.username,
-      password: userData.password
-    };
-    
-    // Create unique keys for email and username lookups
-    const emailKey = `email:${userData.email}`;
-    const usernameKey = `username:${userData.username}`;
-    
-    // Use multi to ensure atomic operation
-    const multi = this.multi();
-    multi.hmset(`users:${userId}`, userDataObj);
-    multi.set(emailKey, userId);
-    multi.set(usernameKey, userId);
-    
-    await multi.exec();
-    return userId;
+    const userKey = `user:${userId}`;
+    await this.hset(userKey, userData);
+    return userKey;
+  }
+
+  async cacheUserData(userId: string, userData: UserData): Promise<void> {
+    try {
+      console.log(`[Redis Cache] Attempting to cache data for user: ${userId}`);
+      const key = `user:${userId}`;
+      const startTime = Date.now();
+      await this.set(key, JSON.stringify(userData), 'EX', 3600); // Cache for 1 hour
+      const duration = Date.now() - startTime;
+      console.log(`[Redis Cache] Successfully cached user data. Key: ${key}, Duration: ${duration}ms`);
+      console.log(`[Redis Cache] Cache TTL set to 1 hour`);
+    } catch (error) {
+      console.error('[Redis Cache] Error caching user data:', error);
+      throw error;
+    }
+  }
+
+  async getCachedUser(userId: string): Promise<UserData | null> {
+    try {
+      console.log(`[Redis Cache] Attempting to retrieve cached data for user: ${userId}`);
+      const key = `user:${userId}`;
+      const startTime = Date.now();
+      const cachedData = await this.get(key);
+      const duration = Date.now() - startTime;
+      
+      if (cachedData) {
+        console.log(`[Redis Cache] Cache HIT. Key: ${key}, Duration: ${duration}ms`);
+        return JSON.parse(cachedData);
+      } else {
+        console.log(`[Redis Cache] Cache MISS. Key: ${key}, Duration: ${duration}ms`);
+        return null;
+      }
+    } catch (error) {
+      console.error('[Redis Cache] Error retrieving cached user:', error);
+      return null;
+    }
+  }
+
+  async invalidateUserCache(userId: string): Promise<void> {
+    try {
+      console.log(`[Redis Cache] Attempting to invalidate cache for user: ${userId}`);
+      const key = `user:${userId}`;
+      const startTime = Date.now();
+      await this.del(key);
+      const duration = Date.now() - startTime;
+      console.log(`[Redis Cache] Successfully invalidated cache. Key: ${key}, Duration: ${duration}ms`);
+    } catch (error) {
+      console.error('[Redis Cache] Error invalidating user cache:', error);
+      throw error;
+    }
   }
 
   async getUserData(userId: string) {
