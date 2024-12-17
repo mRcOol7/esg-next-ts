@@ -147,7 +147,8 @@ const redis = new CustomRedis({
   showFriendlyErrorStack: process.env.NODE_ENV !== 'production',
   connectionName: process.env.REDIS_DB_NAME || 'Nehal-free-db',
   tls: {
-    rejectUnauthorized: false
+    rejectUnauthorized: false,
+    servername: process.env.REDIS_HOST
   }
 });
 
