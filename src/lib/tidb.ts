@@ -1,38 +1,45 @@
 import mysql from 'mysql2/promise';
 
 // Ensure all required environment variables are set
-if (
-  !process.env.TIDB_HOST ||
-  !process.env.TIDB_PORT ||
-  !process.env.TIDB_USER ||
-  !process.env.TIDB_PASSWORD ||
-  !process.env.TIDB_DATABASE ||
-  !process.env.TIDB_SSL_CERT
-) {
-  console.error('TiDB environment variables are not properly configured');
-  throw new Error('TiDB environment variables are required');
+const requiredEnvVars = [
+  'TIDB_HOST',
+  'TIDB_PORT',
+  'TIDB_USER',
+  'TIDB_PASSWORD',
+  'TIDB_DATABASE'
+];
+
+const missingEnvVars = requiredEnvVars.filter(varName => !process.env[varName]);
+if (missingEnvVars.length > 0) {
+  console.error('Missing required TiDB environment variables:', missingEnvVars);
+  throw new Error('Required TiDB environment variables are missing');
 }
 
 // SSL configuration
 const sslConfig: mysql.SslOptions = {
-  rejectUnauthorized: true, // Ensure SSL verification is enabled
-  ca: process.env.TIDB_SSL_CERT, // Directly use the certificate from env var
+  rejectUnauthorized: process.env.NODE_ENV === 'production', // Only enforce in production
+  minVersion: 'TLSv1.2'
 };
+
+// Add CA certificate if provided
+if (process.env.TIDB_SSL_CERT) {
+  sslConfig.ca = process.env.TIDB_SSL_CERT;
+}
 
 // Create a MySQL connection pool
 export const createPool = async () => {
   return mysql.createPool({
     host: process.env.TIDB_HOST!,
-    port: parseInt(process.env.TIDB_PORT!, 10), // Ensure base 10 parsing
+    port: parseInt(process.env.TIDB_PORT!, 10),
     user: process.env.TIDB_USER!,
     password: process.env.TIDB_PASSWORD!,
     database: process.env.TIDB_DATABASE!,
-    ssl: sslConfig, // Use SSL configuration
+    ssl: sslConfig,
     waitForConnections: true,
     connectionLimit: 10,
     queueLimit: 0,
     enableKeepAlive: true,
-    keepAliveInitialDelay: 0,
+    keepAliveInitialDelay: 10000
   });
 };
 
