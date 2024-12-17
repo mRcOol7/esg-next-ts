@@ -132,6 +132,7 @@ if (!process.env.REDIS_HOST || !process.env.REDIS_PORT || !process.env.REDIS_PAS
   throw new Error('Redis configuration is incomplete. Please check your environment variables.');
 }
 
+//redis
 const redis = new CustomRedis({
   host: process.env.REDIS_HOST,
   port: parseInt(process.env.REDIS_PORT),
