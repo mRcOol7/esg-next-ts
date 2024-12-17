@@ -36,14 +36,16 @@ const Login = () => {
 
     async function onSubmit(data: zod.infer<typeof formSchema>) {
         try {
-            await signIn('credentials', {
+            const result = await signIn('credentials', {
                 email: data.email,
                 password: data.password,
                 callbackUrl: '/home',
                 redirect: true,
             });
             
-            // No need to handle redirect manually as NextAuth will handle it
+            if (result?.error) {
+                console.error('Sign-in error:', result.error);
+            }
         } catch (error) {
             console.error('Sign-in error:', error);
         }
@@ -52,13 +54,14 @@ const Login = () => {
 
     const handleSignIn = async () => {
         try {
-            console.log('🚀 Starting Google sign-in...');
-            await signIn('google', {
+            const result = await signIn('google', {
                 callbackUrl: '/home',
                 redirect: true,
             });
             
-            // The redirect will be handled by NextAuth
+            if (result?.error) {
+                console.error('Google sign-in error:', result.error);
+            }
         } catch (error) {
             console.error('❌ Error signing in:', error);
         }
@@ -67,13 +70,11 @@ const Login = () => {
     const handleTwitterSignIn = async () => {
         try {
             const result = await signIn('twitter', {
-                callbackUrl: `${window.location.origin}/`,
+                callbackUrl: '/home',
                 redirect: true
             });
             if (result?.error) {
-                console.error('Sign-in failed:', result.error);
-            } else if (result?.ok) {
-                window.location.href = result.url || '/';
+                console.error('Twitter sign-in error:', result.error);
             }
         } catch (error) {
             console.error('Error signing in with Twitter:', error);
@@ -83,13 +84,11 @@ const Login = () => {
     const handleFacebookSignIn = async () => {
         try {
             const result = await signIn('facebook', {
-                callbackUrl: `${window.location.origin}/`,
+                callbackUrl: '/home',
                 redirect: true
             });
             if (result?.error) {
-                console.error('Sign-in failed:', result.error);
-            } else if (result?.ok) {
-                window.location.href = result.url || '/';
+                console.error('Facebook sign-in error:', result.error);
             }
         } catch (error) {
             console.error('Error signing in with Facebook:', error);

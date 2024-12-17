@@ -75,19 +75,13 @@ export const authOptions = {
     },
     async redirect({ url, baseUrl }) {
       // Allows relative callback URLs
-      if (url.startsWith("/")) {
-        return `${baseUrl}${url}`
-      }
+      if (url.startsWith("/")) return `${baseUrl}${url}`
       // Allows callback URLs on the same origin
-      else if (new URL(url).origin === baseUrl) {
-        return url
-      }
+      else if (new URL(url).origin === baseUrl) return url
       return baseUrl + "/home"
     },
     async session({ session, token }) {
-      if (session?.user) {
-        session.user.id = token.sub
-      }
+      session.user.id = token.sub
       return session
     },
     async jwt({ token, user }) {
@@ -100,11 +94,23 @@ export const authOptions = {
   session: {
     strategy: "jwt",
     maxAge: 30 * 24 * 60 * 60, // 30 days
+    updateAge: 24 * 60 * 60, // 24 hours
   },
   pages: {
     signIn: "/login",
     error: "/login", // Error code passed in query string as ?error=
   },
+  cookies: {
+    sessionToken: {
+      name: process.env.NODE_ENV === 'production' ? '__Secure-next-auth.session-token' : 'next-auth.session-token',
+      options: {
+        httpOnly: true,
+        sameSite: 'lax',
+        path: '/',
+        secure: process.env.NODE_ENV === 'production'
+      }
+    }
+  }
 };
 
 export default NextAuth(authOptions);
