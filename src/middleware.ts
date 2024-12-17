@@ -10,6 +10,14 @@ export async function middleware(request: NextRequest) {
 
     const { pathname } = request.nextUrl;
 
+    // Handle root URL
+    if (pathname === "/") {
+        if (token) {
+            return NextResponse.redirect(new URL("/home", request.url));
+        }
+        return NextResponse.redirect(new URL("/login", request.url));
+    }
+
     // Allow authentication routes
     if (pathname.startsWith("/login") || pathname.startsWith("/signup")) {
         if (token) {
@@ -20,9 +28,7 @@ export async function middleware(request: NextRequest) {
 
     // Protect other routes
     if (!token) {
-        const loginUrl = new URL("/login", request.url);
-        loginUrl.searchParams.set("callbackUrl", pathname);
-        return NextResponse.redirect(loginUrl);
+        return NextResponse.redirect(new URL("/login", request.url));
     }
 
     return NextResponse.next();
@@ -30,6 +36,7 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
     matcher: [
+        "/",
         "/home/:path*",
         "/profile/:path*",
         "/login",

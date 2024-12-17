@@ -74,11 +74,10 @@ export const authOptions = {
       }
     },
     async redirect({ url, baseUrl }) {
-      // Allows relative callback URLs
+      if (url === baseUrl) return `${baseUrl}/home`
       if (url.startsWith("/")) return `${baseUrl}${url}`
-      // Allows callback URLs on the same origin
-      else if (new URL(url).origin === baseUrl) return url
-      return baseUrl + "/home"
+      if (new URL(url).origin === baseUrl) return url
+      return baseUrl
     },
     async session({ session, token }) {
       session.user.id = token.sub
