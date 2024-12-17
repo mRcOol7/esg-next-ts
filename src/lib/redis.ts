@@ -132,12 +132,9 @@ if (!process.env.REDIS_HOST || !process.env.REDIS_PORT || !process.env.REDIS_PAS
   throw new Error('Redis configuration is incomplete. Please check your environment variables.');
 }
 
-//redis
-const redis = new CustomRedis({
-  host: process.env.REDIS_HOST,
-  port: parseInt(process.env.REDIS_PORT),
-  password: process.env.REDIS_PASSWORD,
-  db: 0,
+const redisUrl = `redis://:${process.env.REDIS_PASSWORD}@${process.env.REDIS_HOST}:${process.env.REDIS_PORT}`;
+
+const redis = new CustomRedis(redisUrl, {
   retryStrategy: (times) => {
     const delay = Math.min(times * 50, 2000);
     return delay;
@@ -145,11 +142,7 @@ const redis = new CustomRedis({
   maxRetriesPerRequest: 3,
   enableReadyCheck: true,
   showFriendlyErrorStack: process.env.NODE_ENV !== 'production',
-  connectionName: process.env.REDIS_DB_NAME || 'Nehal-free-db',
-  tls: {
-    rejectUnauthorized: false,
-    servername: process.env.REDIS_HOST
-  }
+  connectionName: process.env.REDIS_DB_NAME || 'Nehal-free-db'
 });
 
 // Add connection event handlers
