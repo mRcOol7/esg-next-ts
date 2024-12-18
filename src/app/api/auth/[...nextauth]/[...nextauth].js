@@ -9,6 +9,21 @@ export const authOptions = {
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+      authorization: {
+        params: {
+          scope: 'openid email profile',
+          prompt: "select_account"
+        }
+      },
+      profile(profile) {
+        return {
+          id: profile.sub,
+          name: profile.name,
+          email: profile.email,
+          image: profile.picture,
+          username: profile.name || profile.email.split('@')[0]
+        };
+      }
     }),
     FacebookProvider({
       clientId: process.env.FACEBOOK_CLIENT_ID,
@@ -41,35 +56,49 @@ export const authOptions = {
     }),
   ],
   callbacks: {
-    async signIn({ user, account }) {
+    async signIn({ user, account, profile }) {
+      console.log(' [NextAuth] Sign In Callback - Start');
+      console.log(' User Data:', JSON.stringify(user, null, 2));
+      console.log(' Account Data:', JSON.stringify(account, null, 2));
+      console.log(' Profile Data:', JSON.stringify(profile, null, 2));
+
       try {
+        if (!user.email) {
+          console.error(" [NextAuth] No email provided from social login");
+          return false;
+        }
+
         const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
+        console.log(' [NextAuth] Making request to:', `${baseUrl}/api/user/social`);
+        
         const response = await fetch(`${baseUrl}/api/user/social`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            userId: user.id || user.email,
-            provider: account?.provider || 'credentials',
-            socialData: {
-              email: user.email,
-              name: user.name,
-              image: user.image,
-              username: user.username || user.email?.split('@')[0],
-              provider: account?.provider || 'credentials'
-            }
+            email: user.email,
+            name: user.name,
+            image: user.image,
+            provider: account.provider,
+            username: user.name || user.email.split('@')[0],
+            accessToken: account.access_token,
+            refreshToken: account.refresh_token,
+            providerAccountId: account.providerAccountId,
+            providerId: account.provider,
           }),
         });
-        
+
         if (!response.ok) {
-          console.error("Failed to store user data");
+          const errorText = await response.text();
+          console.error(" [NextAuth] Failed to store social data:", errorText);
           return false;
         }
-        
+
+        console.log(' [NextAuth] Social login data stored successfully');
         return true;
       } catch (error) {
-        console.error("Error storing user data:", error);
+        console.error(" [NextAuth] Error in signIn callback:", error);
         return false;
       }
     },
@@ -80,14 +109,28 @@ export const authOptions = {
       return baseUrl
     },
     async session({ session, token }) {
-      session.user.id = token.sub
-      return session
-    },
-    async jwt({ token, user }) {
-      if (user) {
-        token.id = user.id
+      console.log(' [NextAuth] Session Callback');
+      console.log(' Session Data:', JSON.stringify(session, null, 2));
+      console.log(' Token Data:', JSON.stringify(token, null, 2));
+
+      if (token) {
+        session.user.id = token.sub;
+        session.accessToken = token.accessToken;
       }
-      return token
+      return session;
+    },
+    async jwt({ token, account, user }) {
+      console.log(' [NextAuth] JWT Callback');
+      console.log(' Token Data:', JSON.stringify(token, null, 2));
+      console.log(' User Data:', JSON.stringify(user, null, 2));
+      console.log(' Account Data:', JSON.stringify(account, null, 2));
+
+      if (account && user) {
+        token.accessToken = account.access_token;
+        token.id = user.id;
+        token.provider = account.provider;
+      }
+      return token;
     }
   },
   session: {

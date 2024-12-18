@@ -1,4 +1,5 @@
 import mysql from 'mysql2/promise';
+import crypto from 'crypto';
 
 // Ensure all required environment variables are set
 const requiredEnvVars = [
@@ -61,29 +62,54 @@ export const initializePool = async () => {
 
 // Initialize the database schema
 export const initializeDatabase = async () => {
-  if (!pool) {
-    await initializePool();
-  }
-
-  const connection = await pool!.getConnection();
+  const pool = await createPool();
   try {
-    await connection.execute(`
+    console.log('Starting database initialization...');
+    
+    // Create users table if not exists
+    await pool.query(`
       CREATE TABLE IF NOT EXISTS users (
-        id VARCHAR(255) PRIMARY KEY,
-        email VARCHAR(255) UNIQUE NOT NULL,
+        id VARCHAR(36) PRIMARY KEY,
+        email VARCHAR(255) DEFAULT '',
         username VARCHAR(255) UNIQUE NOT NULL,
         password VARCHAR(255),
         name VARCHAR(255),
-        image VARCHAR(1000),
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        image VARCHAR(1024),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        UNIQUE KEY unique_email (email)
       )
     `);
-    console.log('Users table initialized');
+    console.log('Users table created or verified');
+
+    // Create social_providers table if not exists
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS social_providers (
+        id VARCHAR(36) PRIMARY KEY,
+        user_id VARCHAR(36) NOT NULL,
+        provider VARCHAR(50) NOT NULL,
+        provider_user_id VARCHAR(255) NOT NULL,
+        provider_email VARCHAR(255),
+        provider_username VARCHAR(255),
+        provider_name VARCHAR(255),
+        provider_image VARCHAR(1024),
+        access_token TEXT,
+        refresh_token TEXT,
+        token_expires_at TIMESTAMP,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+        UNIQUE KEY unique_provider_user (provider, provider_user_id)
+      )
+    `);
+    console.log('Social providers table created or verified');
+    
+    console.log('Database initialization completed successfully');
   } catch (error) {
-    console.error('Error initializing users table:', error);
+    console.error('Error initializing database schema:', error);
     throw error;
   } finally {
-    connection.release();
+    await pool.end();
   }
 };
 
@@ -105,10 +131,27 @@ export async function saveUserToTiDB(userData: UserData) {
 
   const connection = await pool!.getConnection();
   try {
-    const [result] = await connection.execute(
-      'INSERT INTO users (id, email, username, password) VALUES (?, ?, ?, ?)',
-      [userData.id, userData.email, userData.username, userData.password]
-    );
+    // Build the query dynamically based on provided fields
+    const fields = ['id', 'username', 'email']; // Always include email with default empty string
+    const values = [userData.id, userData.username, userData.email || '']; // Use empty string if email is null/undefined
+    
+    if (userData.password !== undefined) {
+      fields.push('password');
+      values.push(userData.password);
+    }
+    if (userData.name !== undefined) {
+      fields.push('name');
+      values.push(userData.name);
+    }
+    if (userData.image !== undefined) {
+      fields.push('image');
+      values.push(userData.image);
+    }
+
+    const query = `INSERT INTO users (${fields.join(', ')}) VALUES (${fields.map(() => '?').join(', ')})`;
+    console.log('Executing query:', query, 'with values:', values);
+    const [result] = await connection.execute(query, values);
+    
     console.log('User saved to TiDB:', result);
     return result;
   } catch (error) {
@@ -120,17 +163,26 @@ export async function saveUserToTiDB(userData: UserData) {
 }
 
 // Check if a user exists in the database
-export async function checkUserExistsInTiDB(email: string, username: string) {
+export async function checkUserExistsInTiDB(email: string | undefined, username: string) {
   if (!pool) {
     await initializePool();
   }
 
   const connection = await pool!.getConnection();
   try {
-    const [rows] = await connection.execute<mysql.RowDataPacket[]>(
-      'SELECT COUNT(*) as count FROM users WHERE email = ? OR username = ?',
-      [email, username]
-    );
+    // Build query based on available parameters
+    let query = 'SELECT COUNT(*) as count FROM users WHERE ';
+    const params = [];
+    
+    if (email) {
+      query += 'email = ? OR username = ?';
+      params.push(email, username);
+    } else {
+      query += 'username = ?';
+      params.push(username);
+    }
+
+    const [rows] = await connection.execute<mysql.RowDataPacket[]>(query, params);
     return rows[0].count > 0;
   } catch (error) {
     console.error('Error checking user in TiDB:', error);
@@ -139,6 +191,57 @@ export async function checkUserExistsInTiDB(email: string, username: string) {
     connection.release();
   }
 }
+
+// Type for social provider data
+export interface SocialProviderData {
+  id?: string;
+  user_id: string;
+  provider: string;
+  provider_user_id?: string;
+  provider_email?: string;
+  provider_username?: string;
+  provider_name?: string;
+  provider_image?: string;
+  access_token?: string;
+  refresh_token?: string;
+  token_expires_at?: Date;
+}
+
+// Save social provider data to TiDB
+export const saveSocialProviderToTiDB = async (data: SocialProviderData) => {
+  const pool = await createPool();
+  try {
+    console.log('Saving social provider data to TiDB:', data);
+    const id = data.id || crypto.randomUUID();
+    await pool.query(
+      `INSERT INTO social_providers 
+       (id, user_id, provider, provider_user_id, provider_email, provider_username, 
+        provider_name, provider_image, access_token, refresh_token, token_expires_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+       ON DUPLICATE KEY UPDATE
+       provider_user_id = VALUES(provider_user_id),
+       provider_email = VALUES(provider_email),
+       provider_username = VALUES(provider_username),
+       provider_name = VALUES(provider_name),
+       provider_image = VALUES(provider_image),
+       access_token = VALUES(access_token),
+       refresh_token = VALUES(refresh_token),
+       token_expires_at = VALUES(token_expires_at)`,
+      [
+        id, data.user_id, data.provider, data.provider_user_id, data.provider_email,
+        data.provider_username, data.provider_name, data.provider_image,
+        data.access_token, data.refresh_token, data.token_expires_at
+      ]
+    );
+    console.log('Social provider data saved successfully');
+    return id;
+  } catch (error) {
+    console.error('Error saving social provider data:', error);
+    throw error;
+  } finally {
+    await pool.end();
+  }
+};
 
 // Close the connection pool
 export const closePool = async () => {
@@ -150,7 +253,13 @@ export const closePool = async () => {
 };
 
 // Initialize the pool and database schema
-initializePool().catch(console.error);
-initializeDatabase().catch(console.error);
+(async () => {
+  try {
+    await initializePool();
+    await initializeDatabase();
+  } catch (error) {
+    console.error('Failed to initialize database:', error);
+  }
+})();
 
 export { pool };
