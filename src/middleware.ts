@@ -9,26 +9,27 @@ export async function middleware(request: NextRequest) {
     });
 
     const { pathname } = request.nextUrl;
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || request.url;
 
     // Handle root URL
     if (pathname === "/") {
         if (token) {
-            return NextResponse.redirect(new URL("/home", request.url));
+            return NextResponse.redirect(new URL("/home", baseUrl));
         }
-        return NextResponse.redirect(new URL("/login", request.url));
+        return NextResponse.redirect(new URL("/login", baseUrl));
     }
 
     // Allow authentication routes
     if (pathname.startsWith("/login") || pathname.startsWith("/signup")) {
         if (token) {
-            return NextResponse.redirect(new URL("/home", request.url));
+            return NextResponse.redirect(new URL("/home", baseUrl));
         }
         return NextResponse.next();
     }
 
     // Protect other routes
     if (!token) {
-        return NextResponse.redirect(new URL("/login", request.url));
+        return NextResponse.redirect(new URL("/login", baseUrl));
     }
 
     return NextResponse.next();

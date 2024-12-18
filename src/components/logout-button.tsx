@@ -8,11 +8,12 @@ import { Loader2 } from "lucide-react"
 
 export default function LogoutButton() {
   const [isLoading, setIsLoading] = useState(false)
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'
 
   const handleLogout = async () => {
     try {
       setIsLoading(true)
-      await signOut({ callbackUrl: "/login" })
+      await signOut({ callbackUrl: `${baseUrl}/login` })
     } catch (error) {
       console.error("Logout error:", error)
     } finally {
