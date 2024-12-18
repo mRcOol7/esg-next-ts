@@ -125,7 +125,7 @@ const handler = NextAuth({
                     // Generate a unique ID for the social provider record
                     const socialProviderId = crypto.randomUUID();
                     
-                    // Save social provider data to TiDB
+                    
                     await saveSocialProviderToTiDB({
                         id: socialProviderId,
                         user_id: user.id,
