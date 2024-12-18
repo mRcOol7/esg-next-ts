@@ -132,27 +132,39 @@ export async function saveUserToTiDB(userData: UserData) {
   const connection = await pool!.getConnection();
   try {
     // Build the query dynamically based on provided fields
-    const fields = ['id', 'username', 'email']; // Always include email with default empty string
-    const values = [userData.id, userData.username, userData.email || '']; // Use empty string if email is null/undefined
+    const fields = ['id', 'username', 'email']; // Always include required fields
+    const values = [userData.id, userData.username, userData.email || '']; 
+    const updateFields = [];
     
     if (userData.password !== undefined) {
       fields.push('password');
       values.push(userData.password);
+      updateFields.push('password = VALUES(password)');
     }
     if (userData.name !== undefined) {
       fields.push('name');
       values.push(userData.name);
+      updateFields.push('name = VALUES(name)');
     }
     if (userData.image !== undefined) {
       fields.push('image');
       values.push(userData.image);
+      updateFields.push('image = VALUES(image)');
     }
 
-    const query = `INSERT INTO users (${fields.join(', ')}) VALUES (${fields.map(() => '?').join(', ')})`;
+    // Create UPSERT query
+    const query = `
+      INSERT INTO users (${fields.join(', ')}) 
+      VALUES (${fields.map(() => '?').join(', ')})
+      ON DUPLICATE KEY UPDATE
+      username = VALUES(username),
+      ${updateFields.join(', ')}
+    `;
+    
     console.log('Executing query:', query, 'with values:', values);
     const [result] = await connection.execute(query, values);
     
-    console.log('User saved to TiDB:', result);
+    console.log('User saved/updated in TiDB:', result);
     return result;
   } catch (error) {
     console.error('Error saving user to TiDB:', error);

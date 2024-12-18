@@ -3,6 +3,9 @@ import GoogleProvider from "next-auth/providers/google";
 import FacebookProvider from "next-auth/providers/facebook";
 import TwitterProvider from "next-auth/providers/twitter";
 import CredentialsProvider from "next-auth/providers/credentials";
+import crypto from 'crypto';
+import { saveSocialProviderToTiDB, saveUserToTiDB } from '@/lib/tidb';
+import { redis } from '@/lib/redis';
 
 const handler = NextAuth({
     providers: [
@@ -91,20 +94,98 @@ const handler = NextAuth({
         error: '/login',
     },
     callbacks: {
-        async jwt({ token, user, account }) {
-            if (account && user) {
-                token.accessToken = account.access_token;
-                token.id = user.id;
-                token.email = user.email;
+        async signIn({ user, account }) {
+            try {
+                if (account && user) {
+                    console.log(' Social sign-in attempt:', {
+                        provider: account.provider,
+                        email: user.email,
+                        id: user.id
+                    });
+
+                    // First ensure the user exists in our database
+                    const userData = {
+                        id: user.id,
+                        email: user.email!,
+                        username: user.email!.split('@')[0],
+                        name: user.name || undefined,
+                        image: user.image || undefined
+                    };
+                    
+                    // Save to TiDB first
+                    await saveUserToTiDB(userData);
+
+                    // Then cache in Redis
+                    await redis.cacheUserData(user.id, {
+                        ...userData,
+                        provider: account.provider,
+                        lastLogin: new Date().toISOString()
+                    });
+
+                    // Generate a unique ID for the social provider record
+                    const socialProviderId = crypto.randomUUID();
+                    
+                    // Save social provider data to TiDB
+                    await saveSocialProviderToTiDB({
+                        id: socialProviderId,
+                        user_id: user.id,
+                        provider: account.provider,
+                        provider_user_id: account.providerAccountId,
+                        provider_email: user.email || undefined,
+                        provider_username: user.email?.split('@')[0] || undefined,
+                        provider_name: user.name || undefined,
+                        provider_image: user.image || undefined,
+                        access_token: account.access_token,
+                        refresh_token: account.refresh_token,
+                        token_expires_at: account.expires_at ? new Date(account.expires_at * 1000) : undefined
+                    });
+
+                    // Cache social provider data in Redis
+                    await redis.saveUserSocialData(user.id, account.provider, {
+                        id: socialProviderId,
+                        name: user.name || undefined,
+                        email: user.email || undefined,
+                        image: user.image || undefined,
+                        username: user.email?.split('@')[0] || undefined,
+                        accessToken: account.access_token,
+                        refreshToken: account.refresh_token
+                    });
+
+                    console.log(' Social provider data saved successfully');
+                }
+                return true;
+            } catch (error) {
+                console.error(' Error in signIn callback:', error);
+                // Still return true to allow sign in, but log the error
+                return true;
             }
-            return token;
+        },
+        async jwt({ token, user, account }) {
+            try {
+                if (account && user) {
+                    console.log(' Updating JWT token with user data');
+                    token.accessToken = account.access_token;
+                    token.id = user.id;
+                    token.email = user.email;
+                }
+                return token;
+            } catch (error) {
+                console.error(' Error in jwt callback:', error);
+                return token;
+            }
         },
         async session({ session, token }) {
-            if (token && session.user) {
-                session.user.id = token.sub as string;
-                session.user.email = token.email as string;
+            try {
+                if (token && session.user) {
+                    console.log(' Updating session with user data');
+                    session.user.id = token.sub as string;
+                    session.user.email = token.email as string;
+                }
+                return session;
+            } catch (error) {
+                console.error(' Error in session callback:', error);
+                return session;
             }
-            return session;
         },
         async redirect({ url, baseUrl }) {
             // Allows relative callback URLs
