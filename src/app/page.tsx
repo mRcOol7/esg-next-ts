@@ -6,7 +6,7 @@ export default function main() {
   return (
       <div>
         <Analytics/>
-        <SpeedInsights />
+        <SpeedInsights/>
           <Home />
       </div>
   );
