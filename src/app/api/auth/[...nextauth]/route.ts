@@ -85,8 +85,8 @@ const handler = NextAuth({
     },
     pages: {
         signIn: '/login',
-        error: '/auth/error',
-        signOut: '/login'
+        signOut: '/login',
+        error: '/login',
     },
     callbacks: {
         async jwt({ token, user, account }) {
@@ -103,18 +103,10 @@ const handler = NextAuth({
             return session;
         },
         async redirect({ url, baseUrl }) {
-            // Handle relative URLs
-            if (url.startsWith('/')) {
-                return `${baseUrl}${url}`;
-            }
-            // Handle callback URLs
-            else if (url.startsWith(baseUrl)) {
-                const callbackUrl = new URL(url).searchParams.get('callbackUrl');
-                if (callbackUrl && callbackUrl.startsWith(baseUrl)) {
-                    return callbackUrl;
-                }
-                return url;
-            }
+            // If the URL starts with the base URL, allow it
+            if (url.startsWith(baseUrl)) return url;
+            // Allow relative URLs
+            else if (url.startsWith("/")) return `${baseUrl}${url}`;
             return baseUrl;
         }
     }
