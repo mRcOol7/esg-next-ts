@@ -3,8 +3,10 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 export async function middleware(request: NextRequest) {
-    // Check if it's an API route
-    if (request.nextUrl.pathname.startsWith('/api')) {
+    // Check if it's an API route or static file
+    if (request.nextUrl.pathname.startsWith('/api') || 
+        request.nextUrl.pathname.startsWith('/_next') ||
+        request.nextUrl.pathname.includes('/favicon.')) {
         return NextResponse.next();
     }
 
@@ -16,27 +18,24 @@ export async function middleware(request: NextRequest) {
     const { pathname } = request.nextUrl;
 
     // Public routes that don't require authentication
-    const publicRoutes = ['/login', '/signup', '/api'];
-    if (publicRoutes.some(route => pathname.startsWith(route))) {
+    const publicRoutes = ['/login', '/signup'];
+    if (publicRoutes.includes(pathname)) {
         // If user is authenticated and tries to access auth pages, redirect to home
         if (token) {
-            const url = new URL('/home', request.url);
-            return NextResponse.redirect(url);
+            return NextResponse.redirect(new URL('/home', request.url));
         }
         return NextResponse.next();
     }
 
     // Protected routes
     if (!token) {
-        const url = new URL('/login', request.url);
-        url.searchParams.set('callbackUrl', encodeURI(request.url));
-        return NextResponse.redirect(url);
+        const callbackUrl = encodeURIComponent(request.url);
+        return NextResponse.redirect(new URL(`/login?callbackUrl=${callbackUrl}`, request.url));
     }
 
     // If user is authenticated and tries to access root, redirect to home
     if (pathname === '/') {
-        const url = new URL('/home', request.url);
-        return NextResponse.redirect(url);
+        return NextResponse.redirect(new URL('/home', request.url));
     }
 
     return NextResponse.next();

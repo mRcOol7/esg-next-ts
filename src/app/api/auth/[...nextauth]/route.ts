@@ -99,20 +99,22 @@ const handler = NextAuth({
         async session({ session, token }) {
             if (token && session.user) {
                 session.user.id = token.sub;
-                session.accessToken = token.accessToken;
             }
             return session;
         },
         async redirect({ url, baseUrl }) {
-            // If the url is relative, prepend the baseUrl
-            if (url.startsWith("/")) {
+            // Handle relative URLs
+            if (url.startsWith('/')) {
                 return `${baseUrl}${url}`;
             }
-            // If the url is absolute but on the same host, just use it
-            else if (new URL(url).origin === baseUrl) {
+            // Handle callback URLs
+            else if (url.startsWith(baseUrl)) {
+                const callbackUrl = new URL(url).searchParams.get('callbackUrl');
+                if (callbackUrl && callbackUrl.startsWith(baseUrl)) {
+                    return callbackUrl;
+                }
                 return url;
             }
-            // Default to homepage
             return baseUrl;
         }
     }
