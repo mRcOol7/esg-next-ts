@@ -49,10 +49,10 @@ const handler = NextAuth({
             }
         }),
     ],
-    debug: true,
+    debug: process.env.NODE_ENV === 'development',
     session: {
         strategy: "jwt",
-        maxAge: 30 * 24 * 60 * 60,
+        maxAge: 30 * 24 * 60 * 60, // 30 days
     },
     cookies: {
         sessionToken: {
@@ -86,12 +86,15 @@ const handler = NextAuth({
     pages: {
         signIn: '/login',
         error: '/auth/error',
-        signOut: '/'
+        signOut: '/login'
     },
     callbacks: {
-        async redirect() {
-            // Always redirect to home after sign in
-            return '/home';
+        async jwt({ token, user, account }) {
+            if (account && user) {
+                token.accessToken = account.access_token;
+                token.id = user.id;
+            }
+            return token;
         },
         async session({ session, token }) {
             if (token && session.user) {
@@ -100,37 +103,17 @@ const handler = NextAuth({
             }
             return session;
         },
-        async jwt({ token, user, account }) {
-            if (account && user) {
-                token.accessToken = account.access_token;
-                token.id = user.id;
-                
-                // Store user data in Redis after successful social sign-in
-                try {
-                    const response = await fetch(`${process.env.NEXTAUTH_URL}/api/user/social`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            userId: user.id,
-                            provider: account.provider,
-                            socialData: {
-                                id: user.id,
-                                email: user.email,
-                                name: user.name,
-                                image: user.image,
-                                accessToken: account.access_token,
-                            }
-                        })
-                    });
-
-                    if (!response.ok) {
-                        console.error('Failed to store social user data');
-                    }
-                } catch (error) {
-                    console.error('Error storing social user data:', error);
-                }
+        async redirect({ url, baseUrl }) {
+            // If the url is relative, prepend the baseUrl
+            if (url.startsWith("/")) {
+                return `${baseUrl}${url}`;
             }
-            return token;
+            // If the url is absolute but on the same host, just use it
+            else if (new URL(url).origin === baseUrl) {
+                return url;
+            }
+            // Default to homepage
+            return baseUrl;
         }
     }
 });
