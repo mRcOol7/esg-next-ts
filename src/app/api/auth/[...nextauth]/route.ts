@@ -53,15 +53,17 @@ const handler = NextAuth({
     session: {
         strategy: "jwt",
         maxAge: 30 * 24 * 60 * 60, // 30 days
+        updateAge: 24 * 60 * 60, // 24 hours
     },
     cookies: {
         sessionToken: {
-            name: `next-auth.session-token`,
+            name: `${process.env.NODE_ENV === 'production' ? '__Secure-' : ''}next-auth.session-token`,
             options: {
                 httpOnly: true,
                 sameSite: 'lax',
                 path: '/',
                 secure: process.env.NODE_ENV === 'production',
+                domain: process.env.NODE_ENV === 'production' ? process.env.NEXT_PUBLIC_DOMAIN : undefined,
             },
         },
         callbackUrl: {
@@ -93,21 +95,24 @@ const handler = NextAuth({
             if (account && user) {
                 token.accessToken = account.access_token;
                 token.id = user.id;
+                token.email = user.email;
             }
             return token;
         },
         async session({ session, token }) {
             if (token && session.user) {
-                session.user.id = token.sub;
+                session.user.id = token.sub as string;
+                session.user.email = token.email as string;
             }
             return session;
         },
         async redirect({ url, baseUrl }) {
-            // If the URL starts with the base URL, allow it
-            if (url.startsWith(baseUrl)) return url;
-            // Allow relative URLs
-            else if (url.startsWith("/")) return `${baseUrl}${url}`;
-            return baseUrl;
+            // Allows relative callback URLs
+            if (url.startsWith("/")) return `${baseUrl}${url}`;
+            // Allows callback URLs on the same origin
+            else if (new URL(url).origin === baseUrl) return url;
+            // Always redirect to home after sign in if no callback URL is specified
+            return `${baseUrl}/home`;
         }
     }
 });
