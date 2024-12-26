@@ -163,7 +163,6 @@ redis.on('ready', () => {
   console.log('Redis client is ready');
 });
 
-// Test the connection
 redis.ping().then(() => {
   console.log('Redis connection test successful');
 }).catch((error) => {

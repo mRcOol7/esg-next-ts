@@ -3,11 +3,14 @@
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
+import { useSelector } from "react-redux";
 import Navbar from "@/app/navbar/navbar";
+import { RootState } from "@/redux/store";
 
 export default function Home() {
     const { data: session, status } = useSession();
     const router = useRouter();
+    const profile = useSelector((state: RootState) => state.profile);
 
     useEffect(() => {
         if (status === "unauthenticated") {
@@ -32,21 +35,20 @@ export default function Home() {
                     <h2 className="text-xl font-semibold mb-4">Your Dashboard</h2>
                     <div className="mb-4">
                         <label className="block text-gray-700 font-bold mb-2">Name:</label>
-                        <p className="text-gray-600">{session.user?.name}</p>
+                        <p className="text-gray-600">{profile.name || session.user?.name || 'Not provided'}</p>
                     </div>
                     <div className="mb-4">
                         <label className="block text-gray-700 font-bold mb-2">Email:</label>
-                        <p className="text-gray-600">{session.user?.email}</p>
+                        <p className="text-gray-600">{profile.email || session.user?.email || 'Not provided'}</p>
                     </div>
                     <div className="mb-4">
                         <label className="block text-gray-700 font-bold mb-2">Phone:</label>
-                        <p className="text-gray-600">+91 1234567890</p>
+                        <p className="text-gray-600">{profile.phone || 'Not provided'}</p>
                     </div>
-                      <div className="mb-4">
+                    <div className="mb-4">
                         <label className="block text-gray-700 font-bold mb-2">Address:</label>
-                        <p className="text-gray-600">Vadodara, Gujarat, India</p>
+                        <p className="text-gray-600">{profile.address || 'Not provided'}</p>
                     </div>
-                    {/* Add your dashboard content here */}
                 </div>
             </main>
         </div>
